@@ -10,7 +10,7 @@ $ViewList['select'] = array( 'functions' => array( 'select' ),
 
 $ViewList['find'] = array( 'functions' => array( 'find' ),
                            'script' => 'find.php',
-                           'params' => array( 'ObjectID' ) );
+                           'params' => array( 'ObjectID', 'Field' ) );
 
 $FunctionList['select'] = array();
 $FunctionList['find'] = array();

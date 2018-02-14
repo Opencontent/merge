@@ -1,8 +1,16 @@
 <?php
 
+use Opencontent\Opendata\Api\EnvironmentLoader;
+use Opencontent\Opendata\Api\AttributeConverterLoader;
+use Opencontent\Opendata\Api\ContentSearch;
+use Opencontent\Opendata\Api\Values\Content;
+
+
+$tpl = eZTemplate::factory();
 $http = eZHTTPTool::instance();
 $Module = $Params['Module'];
 $ObjectID = $Params['ObjectID'];
+$Field = $Params['Field'];
 
 $http->removeSessionVariable( 'MergeNodeSelectionList' );
 $http->removeSessionVariable( 'MergeNodeMaster' );
@@ -14,16 +22,42 @@ if ( !is_object( $object ) )
     return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
 }
 
-$SearchParameters = array(
-    'SearchOffset' => 0,
-    'SearchLimit' => 1000,
-    'Filter' => array( '-meta_id_si:' . $ObjectID ),
-    'SearchContentClassID' => array( $object->attribute( 'class_identifier' ) )
-);
-$solrSearch = new eZSolr();
+$contentSearch = new ContentSearch();
+$currentEnvironment = EnvironmentLoader::loadPreset('full');
+$contentSearch->setEnvironment($currentEnvironment);
 
-$result = $solrSearch->search( $object->attribute( 'name' ), $SearchParameters );
-$tpl = eZTemplate::factory();
+$language = eZLocale::currentLocaleCode();
+$query = "q = '{$object->attribute( 'name' )}'";
+$fieldValue = false;
+if ($Field){	
+	$currentContent = Content::createFromEzContentObject($object);
+	foreach ($currentContent->data[$language] as $field => $value) {
+		if ($field == $Field){
+			list( $classIdentifier, $identifier ) = explode('/', $value['identifier']);
+            $converter = AttributeConverterLoader::load(
+                $classIdentifier,
+                $identifier,
+                $value['datatype']
+            );
+            $fieldValue = $converter->toCSVString($value['content']);
+		}
+	}
+	if (is_string($fieldValue)){
+		$tpl->setVariable( 'field', $Field );
+		$query = "$Field = '$fieldValue'";
+	}
+}
+$query .= " and id != '$ObjectID' and classes [{$object->attribute( 'class_identifier' )}]";
+$data = $contentSearch->search($query);
+$result = array(
+	'SearchCount' => $data->totalCount,
+	'SearchResult' => array()
+);
+foreach ($data->searchHits as $item) {
+	$content = new Content($item);
+	$result['SearchResult'][] = $content->getContentObject($language)->attribute('main_node');
+}
+
 $tpl->setVariable( 'current_object', $object );
 $tpl->setVariable( 'search_result', $result );
 

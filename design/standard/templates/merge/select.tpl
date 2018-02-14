@@ -20,7 +20,7 @@
 {if count( $node_list )|gt( 0 )}
     <table class="list">
     <tr>        
-        <th>Mantieni</th>
+        <th>Clicca sul nome per vedere i dettagli</th>
         {if ezini( 'MergeSettings', 'LanguagesGUI', 'merge.ini' )|eq( 'enabled' )}
         {foreach $language_list as $language}
             <th><img src="{$language|flag_icon()}" width="18" height="12" alt="{$language}" title="{$language}" /></th>
@@ -45,7 +45,7 @@
                                                                 'ignore_visibility', true() ) )}
                         <input type="radio" name="MergeNodeMaster" value="{$node.node_id}"{if $node.node_id|eq( $merge_node_master )} checked="checked"{/if} />
                         <input type="hidden" name="SelectedNodes[]" value="{$node.node_id}" />
-                        <a href={$node.url_alias|ezurl()}><strong>{$node.name}</strong></a>                        
+                        <a data-object="{$node.object.id}" href={$node.url_alias|ezurl()}><strong>{$node.name}</strong></a>                        
                         [{$relation_count}/{$reverse_count}]
                         {break}
                     {/if}
@@ -85,7 +85,7 @@
                         <tr class="{$style}">                                 
                             <td style="border:none"><span title="{$current_object.main_node.path_with_names}">{$current_object.main_node_id}</span></td>
                             <td style="border:none"><span title="{$current_object.remote_id}">{$current_object.id}</span></td>                    
-                            <td style="border:none"><a href={$current_object.main_node.url_alias|ezurl()}>{$current_object.name}</a></td>
+                            <td style="border:none"><a data-object="{$node.object.id}" href={$current_object.main_node.url_alias|ezurl()}>{$current_object.name}</a></td>
                             <td style="border:none">                                     
                                 {foreach $current_object.data_map as $identifier => $attribute}
                                 {if $attributes|contains($identifier)}
@@ -108,7 +108,74 @@
 
 {/if}
 
-<input type="submit" class="button defaultbutton" name="MergeAction" value="Unisci"{if $can_merge|not()} disabled="disabled"{/if} />
+<a href="/" class="btn btn-danger pull-left">Annulla</a>
+<input type="submit" class="button defaultbutton btn-success pull-right" name="MergeAction" value="Unisci"{if $can_merge|not()} disabled="disabled"{/if} />
 
 </form>
+
+<div id="modal" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="clearfix">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                </div>
+                <div id="view" class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{ezscript_load(array(
+    'ezjsc::jquery',
+    'ezjsc::jqueryUI',
+    'ezjsc::jqueryio',
+    'bootstrap.min.js',
+    'handlebars.min.js',
+    'moment-with-locales.min.js',
+    'bootstrap-datetimepicker.min.js',
+    'jquery.fileupload.js',
+    'jquery.fileupload-process.js',
+    'jquery.fileupload-ui.js',
+    'alpaca.js',
+    'leaflet/leaflet.0.7.2.js',
+    'leaflet/Control.Geocoder.js',
+    'leaflet/Control.Loading.js',
+    'leaflet/Leaflet.MakiMarkers.js',
+    'leaflet/leaflet.activearea.js',
+    'leaflet/leaflet.markercluster.js',
+    'jquery.price_format.min.js',
+    'jquery.opendatabrowse.js',
+    'fields/OpenStreetMap.js',
+    'fields/RelationBrowse.js',
+    'fields/LocationBrowse.js',
+    'jquery.opendataform.js'
+))}
+<script type="text/javascript" src={'javascript/tinymce/tinymce.min.js'|ezdesign()} charset="utf-8"></script>
+{ezcss_load(array(        
+    'alpaca.min.css',
+    'leaflet/leaflet.0.7.2.css',
+    'leaflet/Control.Loading.css',
+    'leaflet/MarkerCluster.css',
+    'leaflet/MarkerCluster.Default.css',
+    'bootstrap-datetimepicker.min.css',
+    'jquery.fileupload.css',
+    'alpaca-custom.css'
+))}
+{literal}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $.opendataFormSetup({
+            onBeforeCreate: function(){$('#modal').modal('show')},
+            onSuccess: function(data){$('#modal').modal('hide');}
+        });
+        $('[data-object]').on('click', function (e) {            
+            $('#view').opendataFormView({object: $(this).data('object')});
+            e.preventDefault();
+        });
+    });
+</script>
+{/literal}
+
+
 {/if}
