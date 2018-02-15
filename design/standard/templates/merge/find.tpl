@@ -60,7 +60,7 @@
 
 </form>
 
-<div id="modal" class="modal fade">
+<div id="modal" class="modal fade" style="display: none;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-body">
